@@ -1,0 +1,23 @@
+body {
+    background-color: #000;
+    color: #fff;
+    font-family: Monospace;
+    font-size: 13px;
+    line-height: 24px;
+    overscroll-behavior: none;
+}
+
+.container {
+    position: absolute;
+    top: 20rem;
+    width: 100%;
+    padding: 1rem;
+    box-sizing: border-box;
+    text-align: center;
+}
+
+button {
+    margin-top: 1rem;
+    cursor: pointer;
+    text-transform: uppercase;
+}

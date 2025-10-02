@@ -1,0 +1,298 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>A-Frame: Image Sphere + Webcam + CCTV Overlay</title>
+
+  <script src="https://aframe.io/releases/1.6.0/aframe.min.js"></script>
+  <script src="https://unpkg.com/aframe-look-at-component@0.8.0/dist/aframe-look-at-component.min.js"></script>
+  <link rel="stylesheet" href="styles3D.css"/>
+  <link href="https://fonts.cdnfonts.com/css/vcr-osd-mono" rel="stylesheet">
+
+  <style>
+    @import url('https://fonts.cdnfonts.com/css/vcr-osd-mono');
+
+    :root {
+      --bracket-color: #ffffff;
+      --bracket-thickness: 4px;
+      --bracket-length: 48px;
+      --bracket-offset: 16px;
+      --overlay-alpha: 0.1;
+      --scanline-opacity: 0.06;
+    }
+
+    body {
+      margin: 0;
+      overflow: hidden;
+    }
+
+    /* Flicker effect applied to the whole scene */
+    a-scene {
+      width: 100vw;
+      height: 100vh;
+      display: block;
+      animation: flicker 4s ease-in-out infinite;
+    }
+
+    @keyframes flicker {
+      0%   { filter: none; opacity: 1; }
+      50%  { filter: blur(0.5px) brightness(0.95); opacity: 0.97; }
+      100% { filter: none; opacity: 1; }
+    }
+
+    /* Overlay styles */
+    .overlay {
+      pointer-events: none;
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+    }
+    .overlay::before {
+      content:"";
+      position:absolute;
+      inset:0;
+      background: radial-gradient(1200px 600px at 50% 50%, rgba(0,0,0,0) 40%, rgba(0,0,0,var(--overlay-alpha)) 100%);
+      mix-blend-mode: multiply;
+    }
+    .overlay::after {
+      content:"";
+      position:absolute;
+      inset:0;
+      background-image: repeating-linear-gradient(
+        to bottom,
+        rgba(255,255,255,var(--scanline-opacity)) 0px,
+        rgba(255,255,255,var(--scanline-opacity)) 1px,
+        transparent 1px,
+        transparent 3px
+      );
+      mix-blend-mode: overlay;
+      opacity:0.9;
+    }
+    .corner {
+      position:absolute;
+      width: var(--bracket-length);
+      height: var(--bracket-length);
+      box-sizing:border-box;
+    }
+    .corner.tl { top: var(--bracket-offset); left: var(--bracket-offset);
+      border-top: var(--bracket-thickness) solid var(--bracket-color);
+      border-left: var(--bracket-thickness) solid var(--bracket-color);}
+    .corner.tr { top: var(--bracket-offset); right: var(--bracket-offset);
+      border-top: var(--bracket-thickness) solid var(--bracket-color);
+      border-right: var(--bracket-thickness) solid var(--bracket-color);}
+    .corner.bl { bottom: var(--bracket-offset); left: var(--bracket-offset);
+      border-bottom: var(--bracket-thickness) solid var(--bracket-color);
+      border-left: var(--bracket-thickness) solid var(--bracket-color);}
+    .corner.br { bottom: var(--bracket-offset); right: var(--bracket-offset);
+      border-bottom: var(--bracket-thickness) solid var(--bracket-color);
+      border-right: var(--bracket-thickness) solid var(--bracket-color);}
+    .label {
+      font-family: 'VCR OSD Mono', monospace;
+      position:absolute;
+      left:30px;
+      bottom:30px;
+      color: var(--bracket-color);
+      font-weight:600;
+      font-size:14px;
+      text-shadow: 0 2px 6px rgba(0,0,0,0.75);
+    }
+    .status {
+      font-family: 'VCR OSD Mono', monospace;
+      position:absolute;
+      right:30px;
+      top:30px;
+      color: var(--bracket-color);
+      font-size:12px;
+      font-weight:600;
+      text-transform: uppercase;
+      text-shadow: 0 2px 6px rgba(0,0,0,0.75);
+    }
+  </style>
+
+  <script>
+    // Global ref to webcam plane
+    let webcamPlaneEl = null;
+
+    AFRAME.registerComponent('image-sphere', {
+      schema: {
+        radius: { type: 'number', default: 20 },
+        images: { type: 'array' },
+        links: { type: 'array' }
+      },
+      init: function () {
+        const container = this.el;
+        const { radius, images, links } = this.data;
+        const total = images.length;
+
+        for (let i = 0; i < total; i++) {
+          const y = 1 - (i / (total - 1)) * 2;
+          const r = Math.sqrt(1 - y * y);
+          const phi = i * Math.PI * (3 - Math.sqrt(5));
+          const x = Math.cos(phi) * r;
+          const z = Math.sin(phi) * r;
+
+          if (i === 16) {
+            // Webcam plane
+            const plane = document.createElement('a-plane');
+            plane.setAttribute('material', 'shader: standard; src: #webcamCanvas;');
+            plane.setAttribute('width', 5);
+            plane.setAttribute('height', 3);
+            plane.setAttribute('position', `${x * radius} ${y * radius} ${z * radius}`);
+            plane.setAttribute('look-at', '#camera');
+            container.appendChild(plane);
+            webcamPlaneEl = plane;
+          } else {
+            const img = document.createElement('a-image');
+            img.setAttribute('src', images[i]);
+            img.setAttribute('width', 5);
+            img.setAttribute('height', 8);
+            img.setAttribute('position', `${x * radius} ${y * radius} ${z * radius}`);
+            img.setAttribute('look-at', '#camera');
+            img.setAttribute('class', 'clickable');
+            if (links && links[i]) {
+              img.addEventListener('click', () => window.location.href = links[i]);
+            }
+            container.appendChild(img);
+          }
+        }
+      }
+    });
+
+    window.addEventListener('load', () => {
+      const video = document.getElementById('webcam');
+      const canvas = document.getElementById('webcamCanvas');
+      if (!video || !canvas) return;
+      const ctx = canvas.getContext('2d');
+
+      navigator.mediaDevices.getUserMedia({ video: true, audio: false })
+        .then(stream => { video.srcObject = stream; video.play().catch(()=>{}); })
+        .catch(err => console.error('Webcam error:', err));
+
+      video.addEventListener('loadedmetadata', () => {
+        canvas.width = video.videoWidth || 640;
+        canvas.height = video.videoHeight || 480;
+
+        const desiredWidth = 5;
+        const aspect = canvas.height / canvas.width;
+        const desiredHeight = desiredWidth * aspect;
+
+        if (webcamPlaneEl) {
+          webcamPlaneEl.setAttribute('width', desiredWidth);
+          webcamPlaneEl.setAttribute('height', desiredHeight);
+        }
+        requestAnimationFrame(drawFrame);
+      });
+
+      function drawFrame() {
+        ctx.filter = 'grayscale(100%)';
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        if (webcamPlaneEl) {
+          const mesh = webcamPlaneEl.getObject3D && webcamPlaneEl.getObject3D('mesh');
+          if (mesh && mesh.material && mesh.material.map) {
+            mesh.material.map.needsUpdate = true;
+          }
+        }
+        requestAnimationFrame(drawFrame);
+      }
+    });
+  </script>
+</head>
+
+<body>
+  <!-- Hidden webcam sources -->
+  <video id="webcam" autoplay playsinline style="display:none"></video>
+  <canvas id="webcamCanvas" style="display:none"></canvas>
+
+  <a-scene vr-mode-ui="enabled: false">
+    <a-camera id="camera" wasd-controls-enabled="false" position="0 1.6 0">
+      <a-cursor raycaster="objects: .clickable" material="color: white; shader: flat"></a-cursor>
+    </a-camera>
+
+    <!-- Image sphere with webcam in 17th slot -->
+    <a-entity image-sphere="
+      radius: 25;
+      images: [
+        pngs/IMG_1495.png,
+        pngs/IMG_1512.png,
+        pngs/IMG_1542.png,
+        pngs/IMG_1544.png,
+        pngs/IMG_1552.png,
+        pngs/IMG_1558.png,
+        pngs/IMG_1559.png,
+        pngs/IMG_1560.png,
+        pngs/IMG_1562.png,
+        pngs/IMG_1564.png,
+        pngs/IMG_1566.png,
+        pngs/IMG_1569.png,
+        pngs/IMG_1573.png,
+        pngs/IMG_1575.png,
+        pngs/IMG_1582.png,
+        pngs/IMG_1583.png,
+        pngs/IMG_1587.png,
+        pngs/IMG_1588.png,
+        pngs/IMG_1596.png,
+        pngs/IMG_1607.png,
+        pngs/IMG_1617.png,
+        pngs/IMG_1619.png,
+        pngs/IMG_1622.png,
+        pngs/IMG_1636.png,
+        pngs/screenshot.png
+      ];
+      links: [
+      https://www.nytimes.com/2025/04/14/technology/trump-immigration-tech-geo-group.html?searchResultPosition=3,
+      https://www.nytimes.com/2025/04/14/technology/trump-immigration-tech-geo-group.html?searchResultPosition=3,
+      https://www.nytimes.com/2025/04/14/technology/trump-immigration-tech-geo-group.html?searchResultPosition=3,
+      https://www.nytimes.com/2025/04/14/technology/trump-immigration-tech-geo-group.html?searchResultPosition=3,
+      https://www.nytimes.com/2025/04/14/technology/trump-immigration-tech-geo-group.html?searchResultPosition=3,
+      https://www.nytimes.com/2025/04/14/technology/trump-immigration-tech-geo-group.html?searchResultPosition=3,
+      https://www.nytimes.com/2025/04/14/technology/trump-immigration-tech-geo-group.html?searchResultPosition=3,
+      https://www.nytimes.com/2025/04/14/technology/trump-immigration-tech-geo-group.html?searchResultPosition=3,
+      https://www.nytimes.com/2025/04/14/technology/trump-immigration-tech-geo-group.html?searchResultPosition=3,
+      https://www.nytimes.com/2025/04/14/technology/trump-immigration-tech-geo-group.html?searchResultPosition=3,
+      https://www.nytimes.com/2025/04/14/technology/trump-immigration-tech-geo-group.html?searchResultPosition=3,
+      https://www.nytimes.com/2025/04/14/technology/trump-immigration-tech-geo-group.html?searchResultPosition=3,
+      https://www.nytimes.com/2025/04/14/technology/trump-immigration-tech-geo-group.html?searchResultPosition=3,
+      https://www.nytimes.com/2025/04/14/technology/trump-immigration-tech-geo-group.html?searchResultPosition=3,
+      https://www.nytimes.com/2025/04/14/technology/trump-immigration-tech-geo-group.html?searchResultPosition=3,
+      https://www.nytimes.com/2025/04/14/technology/trump-immigration-tech-geo-group.html?searchResultPosition=3,
+      https://www.nytimes.com/2025/04/14/technology/trump-immigration-tech-geo-group.html?searchResultPosition=3,
+      https://www.nytimes.com/2025/04/14/technology/trump-immigration-tech-geo-group.html?searchResultPosition=3,
+      https://www.nytimes.com/2025/04/14/technology/trump-immigration-tech-geo-group.html?searchResultPosition=3,
+      https://www.nytimes.com/2025/04/14/technology/trump-immigration-tech-geo-group.html?searchResultPosition=3,
+      https://www.nytimes.com/2025/04/14/technology/trump-immigration-tech-geo-group.html?searchResultPosition=3,
+      https://www.nytimes.com/2025/04/14/technology/trump-immigration-tech-geo-group.html?searchResultPosition=3,
+      https://www.nytimes.com/2025/04/14/technology/trump-immigration-tech-geo-group.html?searchResultPosition=3,
+      https://www.nytimes.com/2025/04/14/technology/trump-immigration-tech-geo-group.html?searchResultPosition=3,
+      https://www.nytimes.com/2025/04/14/technology/trump-immigration-tech-geo-group.html?searchResultPosition=3,
+      ];
+    "></a-entity>
+
+    <a-sky color="#000000"></a-sky>
+  </a-scene>
+
+  <button class="back-button" onclick="window.history.back()">back to <br>menu</button>
+
+  <!-- CCTV Overlay -->
+  <div class="overlay">
+    <div class="corner tl"></div>
+    <div class="corner tr"></div>
+    <div class="corner bl"></div>
+    <div class="corner br"></div>
+    <div class="label" id="timestamp"></div>
+    <div class="status">REC</div>
+  </div>
+
+  <script>
+    // Update timestamp
+    function updateTime() {
+      const now = new Date();
+      const pad = n => String(n).padStart(2,'0');
+      document.getElementById('timestamp').textContent =
+        `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())} ` +
+        `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+    }
+    setInterval(updateTime, 1000);
+    updateTime();
+  </script>
+</body>
+</html>
