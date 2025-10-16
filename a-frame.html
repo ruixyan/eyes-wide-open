@@ -1,127 +1,141 @@
 <!doctype html>
-<html>
+<html lang="en">
 <head>
   <meta charset="utf-8" />
-  <title>A-Frame: Image Sphere + Webcam + CCTV Overlay</title>
+  <title>A-Frame Sphere + NYT Articles (Fixed JSON & Unique per Image)</title>
 
   <script src="https://aframe.io/releases/1.6.0/aframe.min.js"></script>
   <script src="https://unpkg.com/aframe-look-at-component@0.8.0/dist/aframe-look-at-component.min.js"></script>
-  <link rel="stylesheet" href="styles3D.css"/>
   <link href="https://fonts.cdnfonts.com/css/vcr-osd-mono" rel="stylesheet">
 
   <style>
     @import url('https://fonts.cdnfonts.com/css/vcr-osd-mono');
-
-    :root {
-      --bracket-color: #ffffff;
-      --bracket-thickness: 4px;
-      --bracket-length: 48px;
-      --bracket-offset: 16px;
-      --overlay-alpha: 0.1;
-      --scanline-opacity: 0.06;
-    }
-
     body {
       margin: 0;
       overflow: hidden;
+      background: #000;
+      font-family: 'VCR OSD Mono', monospace;
     }
 
-    /* Flicker effect applied to the whole scene */
+    @font-face {
+    font-family: FragmentMono-Regular;
+    src: url(FragmentMono-Regular.ttf);
+  }
+
     a-scene {
       width: 100vw;
       height: 100vh;
       display: block;
-      animation: flicker 4s ease-in-out infinite;
     }
 
-    @keyframes flicker {
-      0%   { filter: none; opacity: 1; }
-      50%  { filter: blur(0.5px) brightness(0.95); opacity: 0.97; }
-      100% { filter: none; opacity: 1; }
-    }
-
-    /* Overlay styles */
-    .overlay {
-      pointer-events: none;
-      position: fixed;
-      inset: 0;
-      z-index: 9999;
-    }
-    .overlay::before {
-      content:"";
-      position:absolute;
-      inset:0;
-      background: radial-gradient(1200px 600px at 50% 50%, rgba(0,0,0,0) 40%, rgba(0,0,0,var(--overlay-alpha)) 100%);
-      mix-blend-mode: multiply;
-    }
-    .overlay::after {
-      content:"";
-      position:absolute;
-      inset:0;
-      background-image: repeating-linear-gradient(
-        to bottom,
-        rgba(255,255,255,var(--scanline-opacity)) 0px,
-        rgba(255,255,255,var(--scanline-opacity)) 1px,
-        transparent 1px,
-        transparent 3px
-      );
-      mix-blend-mode: overlay;
-      opacity:0.9;
-    }
     .corner {
-      position:absolute;
-      width: var(--bracket-length);
-      height: var(--bracket-length);
-      box-sizing:border-box;
+      position: absolute;
+      width: 48px;
+      height: 48px;
+      box-sizing: border-box;
+      border: 4px solid #fff;
     }
-    .corner.tl { top: var(--bracket-offset); left: var(--bracket-offset);
-      border-top: var(--bracket-thickness) solid var(--bracket-color);
-      border-left: var(--bracket-thickness) solid var(--bracket-color);}
-    .corner.tr { top: var(--bracket-offset); right: var(--bracket-offset);
-      border-top: var(--bracket-thickness) solid var(--bracket-color);
-      border-right: var(--bracket-thickness) solid var(--bracket-color);}
-    .corner.bl { bottom: var(--bracket-offset); left: var(--bracket-offset);
-      border-bottom: var(--bracket-thickness) solid var(--bracket-color);
-      border-left: var(--bracket-thickness) solid var(--bracket-color);}
-    .corner.br { bottom: var(--bracket-offset); right: var(--bracket-offset);
-      border-bottom: var(--bracket-thickness) solid var(--bracket-color);
-      border-right: var(--bracket-thickness) solid var(--bracket-color);}
+    .corner.tl { top: 16px; left: 16px; border-bottom: none; border-right: none; }
+    .corner.tr { top: 16px; right: 16px; border-bottom: none; border-left: none; }
+    .corner.bl { bottom: 16px; left: 16px; border-top: none; border-right: none; }
+    .corner.br { bottom: 16px; right: 16px; border-top: none; border-left: none; }
     .label {
-      font-family: 'VCR OSD Mono', monospace;
-      position:absolute;
-      left:30px;
-      bottom:30px;
-      color: var(--bracket-color);
-      font-weight:600;
-      font-size:14px;
-      text-shadow: 0 2px 6px rgba(0,0,0,0.75);
+      position: absolute;
+      left: 30px;
+      bottom: 30px;
+      color: #fff;
+      font-size: 14px;
     }
     .status {
-      font-family: 'VCR OSD Mono', monospace;
-      position:absolute;
-      right:30px;
-      top:30px;
-      color: var(--bracket-color);
-      font-size:12px;
-      font-weight:600;
+      position: absolute;
+      right: 30px;
+      top: 30px;
+      color: #fff;
+      font-size: 12px;
       text-transform: uppercase;
-      text-shadow: 0 2px 6px rgba(0,0,0,0.75);
+    }
+
+    /* Article card */
+    #article-card {
+      position: fixed;
+      right: 0; top: 0;
+      width: 40%; height: 100%;
+      background: rgba(10,10,10,0.9);
+      color: #fff;
+      transform: translateX(100%);
+      transition: transform 0.8s ease, opacity 0.5s ease;
+      opacity: 0; z-index: 10000;
+      display: flex; align-items: top; justify-content: center;
+      box-shadow: -8px 0 30px rgba(0,0,0,0.5);
+    }
+    #article-card.show {
+      transform: translateX(0);
+      opacity: 1;
+    }
+    #article-card .content {
+      padding: 40px;
+      max-width: 500px;
+    }
+    #article-card h2 { margin-bottom: 1em; font-size: 24px; border-bottom: 2px solid #fff; padding-bottom: 0.5em; }
+    #article-card p { font-family:'FragmentMono-Regular'; font-size: 14px; line-height: 1.6em; color: #ccc; }
+
+    /* Image overlay */
+    #image-overlay {
+      position: fixed;
+      top: 0; left: 0;
+      width: 60%; height: 100%;
+      display: flex; align-items: center; justify-content: center;
+      background: rgba(0,0,0,0.8);
+      transform: translateX(-100%);
+      opacity: 0;
+      transition: transform 0.8s ease, opacity 0.5s ease;
+      z-index: 9999;
+    }
+    #image-overlay.show {
+      transform: translateX(0);
+      opacity: 1;
+    }
+    #image-overlay img {
+      max-width: 90%;
+      max-height: 90%;
+      border: 3px solid white;
+      border-radius: 8px;
+      box-shadow: 0 0 20px rgba(255,255,255,0.3);
     }
   </style>
 
   <script>
-    // Global ref to webcam plane
     let webcamPlaneEl = null;
+    let nytArticles = [];
 
+    // Fetch NYT articles
+    async function fetchNYTArticles(keyword = 'surveillance') {
+      const apiKey = "JFjJBC7AGXwfjBKCCR0EnpNPntdKPoYr"; // Replace with your NYT API key
+      const url = `https://api.nytimes.com/svc/search/v2/articlesearch.json?q=${encodeURIComponent(keyword)}&sort=newest&api-key=${apiKey}`;
+      try {
+        const resp = await fetch(url);
+        const data = await resp.json();
+        const docs = data.response?.docs || [];
+        nytArticles = docs.map(doc => ({
+          headline: doc.headline.main,
+          abstract: doc.abstract || doc.lead_paragraph || 'No description available.',
+          url: doc.web_url
+        }));
+        return nytArticles;
+      } catch (err) {
+        console.error('NYT fetch error:', err);
+        return [];
+      }
+    }
+
+    // Sphere component
     AFRAME.registerComponent('image-sphere', {
-      schema: {
-        radius: { type: 'number', default: 20 },
-        images: { type: 'array' },
-        links: { type: 'array' }
-      },
-      init: function () {
+      schema: { radius: { type: 'number', default: 20 }, images: { type: 'array' } },
+      async init() {
         const container = this.el;
-        const { radius, images, links } = this.data;
+        const { radius, images } = this.data;
+
+        const articles = await fetchNYTArticles();
         const total = images.length;
 
         for (let i = 0; i < total; i++) {
@@ -132,11 +146,10 @@
           const z = Math.sin(phi) * r;
 
           if (i === 16) {
-            // Webcam plane
             const plane = document.createElement('a-plane');
             plane.setAttribute('material', 'shader: standard; src: #webcamCanvas;');
-            plane.setAttribute('width', 5);
-            plane.setAttribute('height', 3);
+            plane.setAttribute('width', 10);
+            plane.setAttribute('height', 6);
             plane.setAttribute('position', `${x * radius} ${y * radius} ${z * radius}`);
             plane.setAttribute('look-at', '#camera');
             container.appendChild(plane);
@@ -144,20 +157,60 @@
           } else {
             const img = document.createElement('a-image');
             img.setAttribute('src', images[i]);
-            img.setAttribute('width', 5);
-            img.setAttribute('height', 8);
+            img.setAttribute('width', 8);
+            img.setAttribute('height', 11);
             img.setAttribute('position', `${x * radius} ${y * radius} ${z * radius}`);
             img.setAttribute('look-at', '#camera');
             img.setAttribute('class', 'clickable');
-            if (links && links[i]) {
-              img.addEventListener('click', () => window.location.href = links[i]);
+
+            // Assign article or fallback
+            let article = articles[i % articles.length];
+            if (!article) {
+              article = {
+                headline: "Surveillance and Society",
+                abstract: "Article data unavailable. This is placeholder text for demo purposes.",
+                url: "https://www.nytimes.com"
+              };
             }
+
+            img.setAttribute('data-article', JSON.stringify(article));
+            img.setAttribute('click-show-nyt', '');
             container.appendChild(img);
           }
         }
       }
     });
 
+    // Click behavior
+    AFRAME.registerComponent('click-show-nyt', {
+      init: function () {
+        this.el.addEventListener('click', () => {
+          const img = this.el;
+          const attr = img.getAttribute('data-article');
+          if (!attr) return;
+          let article;
+          try { article = JSON.parse(attr); } 
+          catch { return; }
+
+          const imageOverlay = document.getElementById('image-overlay');
+          const overlayImg = document.getElementById('overlay-img');
+          const card = document.getElementById('article-card');
+
+          overlayImg.src = img.getAttribute('src');
+          imageOverlay.classList.add('show');
+          card.classList.add('show');
+
+          const cnt = card.querySelector('.content');
+          cnt.innerHTML = `
+            <h2>${article.headline}</h2>
+            <p>${article.abstract}</p>
+            <p><a href="${article.url}" target="_blank" style="color: cyan;">Read full article →</a></p>
+          `;
+        });
+      }
+    });
+
+    // Webcam setup
     window.addEventListener('load', () => {
       const video = document.getElementById('webcam');
       const canvas = document.getElementById('webcamCanvas');
@@ -169,18 +222,9 @@
         .catch(err => console.error('Webcam error:', err));
 
       video.addEventListener('loadedmetadata', () => {
-        canvas.width = video.videoWidth || 640;
-        canvas.height = video.videoHeight || 480;
-
-        const desiredWidth = 5;
-        const aspect = canvas.height / canvas.width;
-        const desiredHeight = desiredWidth * aspect;
-
-        if (webcamPlaneEl) {
-          webcamPlaneEl.setAttribute('width', desiredWidth);
-          webcamPlaneEl.setAttribute('height', desiredHeight);
-        }
-        requestAnimationFrame(drawFrame);
+        canvas.width = video.videoWidth || 1040;
+        canvas.height = video.videoHeight || 880;
+        setInterval(drawFrame, 100); // update every 100ms instead of each frame
       });
 
       function drawFrame() {
@@ -188,29 +232,54 @@
         ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
         if (webcamPlaneEl) {
           const mesh = webcamPlaneEl.getObject3D && webcamPlaneEl.getObject3D('mesh');
-          if (mesh && mesh.material && mesh.material.map) {
-            mesh.material.map.needsUpdate = true;
-          }
+          if (mesh && mesh.material && mesh.material.map) mesh.material.map.needsUpdate = true;
         }
         requestAnimationFrame(drawFrame);
       }
+    });
+
+    // Close overlays
+    window.addEventListener('keydown', e => { if (e.key === 'Escape') closeOverlays(); });
+    window.addEventListener('click', e => {
+      if (e.target.id === 'image-overlay' || e.target.id === 'article-card') closeOverlays();
+    });
+    function closeOverlays() {
+      document.getElementById('image-overlay').classList.remove('show');
+      document.getElementById('article-card').classList.remove('show');
+    }
+
+    // Timestamp
+    window.addEventListener('DOMContentLoaded', () => {
+      const t = document.getElementById('timestamp');
+      setInterval(() => {
+        const now = new Date();
+        const pad = n => String(n).padStart(2, '0');
+        t.textContent = `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+      }, 1000);
     });
   </script>
 </head>
 
 <body>
-  <!-- Hidden webcam sources -->
   <video id="webcam" autoplay playsinline style="display:none"></video>
   <canvas id="webcamCanvas" style="display:none"></canvas>
 
   <a-scene vr-mode-ui="enabled: false">
     <a-camera id="camera" wasd-controls-enabled="false" position="0 1.6 0">
-      <a-cursor raycaster="objects: .clickable" material="color: white; shader: flat"></a-cursor>
+      <!-- <a-cursor raycaster="objects: .clickable" material="color: white; shader: flat"></a-cursor> -->
+      <a-entity id="crosshair" position="0 0 -1">
+        <a-entity geometry="primitive: plane; height: 0.0035; width: 0.03"
+                  material="color: white; shader: flat"></a-entity>
+        <a-entity geometry="primitive: plane; height: 0.03; width: 0.0035"
+                  material="color: white; shader: flat"></a-entity>
+      </a-entity>
+      
+      <a-cursor visible="false" raycaster="objects: .clickable"></a-cursor>
+      
     </a-camera>
 
-    <!-- Image sphere with webcam in 17th slot -->
     <a-entity image-sphere="
-      radius: 25;
+      radius: 40;
       images: [
         pngs/IMG_1495.png,
         pngs/IMG_1512.png,
@@ -238,41 +307,14 @@
         pngs/IMG_1636.png,
         pngs/screenshot.png
       ];
-      links: [
-      https://www.nytimes.com/2025/04/14/technology/trump-immigration-tech-geo-group.html?searchResultPosition=3,
-      https://www.nytimes.com/2025/04/14/technology/trump-immigration-tech-geo-group.html?searchResultPosition=3,
-      https://www.nytimes.com/2025/04/14/technology/trump-immigration-tech-geo-group.html?searchResultPosition=3,
-      https://www.nytimes.com/2025/04/14/technology/trump-immigration-tech-geo-group.html?searchResultPosition=3,
-      https://www.nytimes.com/2025/04/14/technology/trump-immigration-tech-geo-group.html?searchResultPosition=3,
-      https://www.nytimes.com/2025/04/14/technology/trump-immigration-tech-geo-group.html?searchResultPosition=3,
-      https://www.nytimes.com/2025/04/14/technology/trump-immigration-tech-geo-group.html?searchResultPosition=3,
-      https://www.nytimes.com/2025/04/14/technology/trump-immigration-tech-geo-group.html?searchResultPosition=3,
-      https://www.nytimes.com/2025/04/14/technology/trump-immigration-tech-geo-group.html?searchResultPosition=3,
-      https://www.nytimes.com/2025/04/14/technology/trump-immigration-tech-geo-group.html?searchResultPosition=3,
-      https://www.nytimes.com/2025/04/14/technology/trump-immigration-tech-geo-group.html?searchResultPosition=3,
-      https://www.nytimes.com/2025/04/14/technology/trump-immigration-tech-geo-group.html?searchResultPosition=3,
-      https://www.nytimes.com/2025/04/14/technology/trump-immigration-tech-geo-group.html?searchResultPosition=3,
-      https://www.nytimes.com/2025/04/14/technology/trump-immigration-tech-geo-group.html?searchResultPosition=3,
-      https://www.nytimes.com/2025/04/14/technology/trump-immigration-tech-geo-group.html?searchResultPosition=3,
-      https://www.nytimes.com/2025/04/14/technology/trump-immigration-tech-geo-group.html?searchResultPosition=3,
-      https://www.nytimes.com/2025/04/14/technology/trump-immigration-tech-geo-group.html?searchResultPosition=3,
-      https://www.nytimes.com/2025/04/14/technology/trump-immigration-tech-geo-group.html?searchResultPosition=3,
-      https://www.nytimes.com/2025/04/14/technology/trump-immigration-tech-geo-group.html?searchResultPosition=3,
-      https://www.nytimes.com/2025/04/14/technology/trump-immigration-tech-geo-group.html?searchResultPosition=3,
-      https://www.nytimes.com/2025/04/14/technology/trump-immigration-tech-geo-group.html?searchResultPosition=3,
-      https://www.nytimes.com/2025/04/14/technology/trump-immigration-tech-geo-group.html?searchResultPosition=3,
-      https://www.nytimes.com/2025/04/14/technology/trump-immigration-tech-geo-group.html?searchResultPosition=3,
-      https://www.nytimes.com/2025/04/14/technology/trump-immigration-tech-geo-group.html?searchResultPosition=3,
-      https://www.nytimes.com/2025/04/14/technology/trump-immigration-tech-geo-group.html?searchResultPosition=3,
-      ];
     "></a-entity>
 
     <a-sky color="#000000"></a-sky>
   </a-scene>
 
-  <button class="back-button" onclick="window.history.back()">back to <br>menu</button>
+  <div id="image-overlay"><img id="overlay-img" src="" alt="Expanded view"></div>
+  <div id="article-card"><div class="content"><h2>Loading...</h2><p>Fetching article...</p></div></div>
 
-  <!-- CCTV Overlay -->
   <div class="overlay">
     <div class="corner tl"></div>
     <div class="corner tr"></div>
@@ -281,18 +323,5 @@
     <div class="label" id="timestamp"></div>
     <div class="status">REC</div>
   </div>
-
-  <script>
-    // Update timestamp
-    function updateTime() {
-      const now = new Date();
-      const pad = n => String(n).padStart(2,'0');
-      document.getElementById('timestamp').textContent =
-        `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())} ` +
-        `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
-    }
-    setInterval(updateTime, 1000);
-    updateTime();
-  </script>
 </body>
 </html>

@@ -1,144 +1,141 @@
-<!doctype html>
-<html>
-  <head>
-    <meta charset="utf-8">
-    <title>NYTimes Surveillance Articles (Infinite Scroll)</title>
-    <style>
-      body {
-        font-family: Arial, sans-serif;
-        background: #111;
-        color: #fff;
-        margin: 0;
-        padding: 2rem;
-      }
-      h1 {
-        text-align: center;
-        margin-bottom: 1.5rem;
-        font-weight: 400;
-      }
-      .articles {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-        gap: 1.5rem;
-      }
-      .article {
-        background: #222;
-        border-radius: 10px;
-        overflow: hidden;
-        transition: transform 0.2s ease;
-      }
-      .article:hover {
-        transform: scale(1.03);
-      }
-      .article img {
-        width: 100%;
-        height: 200px;
-        object-fit: cover;
-        filter: grayscale(100%);
-      }
-      .article-content {
-        padding: 1rem;
-      }
-      .article-content h2 {
-        font-size: 1.1rem;
-        margin: 0 0 0.5rem;
-      }
-      .article-content p {
-        font-size: 0.9rem;
-        color: #ccc;
-      }
-      .article-content a {
-        display: inline-block;
-        margin-top: 0.5rem;
-        color: #1e90ff;
-        text-decoration: none;
-      }
-      .article-content a:hover {
-        text-decoration: underline;
-      }
-      .loading {
-        text-align: center;
-        margin-top: 2rem;
-        color: #aaa;
-      }
-    </style>
-  </head>
-  <body>
-    <h1>NYTimes Articles about Surveillance</h1>
-    <div id="articles" class="articles"></div>
-    <div id="loading" class="loading">Loading...</div>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>NYT Keyword Search</title>
+  <style>
+    body {
+      font-family: system-ui, sans-serif;
+      background: #fafafa;
+      color: #111;
+      margin: 0;
+      padding: 2rem;
+    }
 
-    <script>
-      const API_KEY = "JFjJBC7AGXwfjBKCCR0EnpNPntdKPoYr"; // Replace with your NYTimes API key
-      let page = 0;
-      let loading = false;
-      let reachedEnd = false;
+    h1 {
+      text-align: center;
+    }
 
-      async function fetchSurveillanceArticles() {
-        if (loading || reachedEnd) return;
-        loading = true;
+    #searchBar {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 2rem;
+    }
 
-        const loadingDiv = document.getElementById("loading");
-        loadingDiv.textContent = "Loading...";
+    input[type="text"] {
+      padding: 0.6rem;
+      font-size: 1rem;
+      width: 300px;
+      border-radius: 6px 0 0 6px;
+      border: 1px solid #ccc;
+    }
 
-        const endpoint = `https://api.nytimes.com/svc/search/v2/articlesearch.json?q=surveillance&sort=newest&page=${page}&api-key=${API_KEY}`;
-        const container = document.getElementById("articles");
+    button {
+      padding: 0.6rem 1rem;
+      font-size: 1rem;
+      border: none;
+      background: #111;
+      color: white;
+      border-radius: 0 6px 6px 0;
+      cursor: pointer;
+    }
 
-        try {
-          const res = await fetch(endpoint);
-          if (!res.ok) throw new Error(`HTTP ${res.status}`);
-          const data = await res.json();
+    .articles {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1.5rem;
+    }
 
-          const articles = data?.response?.docs || [];
+    .article {
+      background: white;
+      border-radius: 10px;
+      padding: 1rem;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
 
-          if (articles.length === 0) {
-            reachedEnd = true;
-            loadingDiv.textContent = "No more articles.";
-            return;
-          }
+    .title {
+      font-size: 1.1rem;
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+    }
 
-          // Render each article
-          articles.forEach(a => {
-            const title = a.headline?.main || "Untitled";
-            const abstract = a.abstract || a.lead_paragraph || "";
-            const url = a.web_url || "#";
-            const img = a.multimedia?.length
-              ? `https://www.nytimes.com/${a.multimedia[0].url}`
-              : "";
+    .abstract {
+      color: #555;
+      font-size: 0.95rem;
+      margin-bottom: 0.75rem;
+    }
 
-            const div = document.createElement("div");
-            div.className = "article";
-            div.innerHTML = `
-              ${img ? `<img src="${img}" alt="">` : ""}
-              <div class="article-content">
-                <h2>${title}</h2>
-                <p>${abstract}</p>
-                <a href="${url}" target="_blank">Read more →</a>
-              </div>
-            `;
-            container.appendChild(div);
-          });
+    .link {
+      color: #0066cc;
+      font-weight: 600;
+      text-decoration: none;
+    }
 
-          page++;
-          loadingDiv.textContent = "Scroll for more...";
-        } catch (err) {
-          console.error("Error fetching articles:", err);
-          loadingDiv.textContent = "Error loading articles.";
-        } finally {
-          loading = false;
+    .link:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <h1>📰 NYT Article Search</h1>
+
+  <div id="searchBar">
+    <input type="text" id="queryInput" placeholder="Search for articles...">
+    <button onclick="searchArticles()">Search</button>
+  </div>
+
+  <div id="articles" class="articles"></div>
+
+  <script>
+    const API_KEY = "JFjJBC7AGXwfjBKCCR0EnpNPntdKPoYr"; // Replace with your NYT API key
+
+    async function searchArticles() {
+      const query = document.getElementById('queryInput').value.trim();
+      console.log(query);
+      if (!query) return alert("Please enter a keyword.");
+
+      const endpoint = `https://api.nytimes.com/svc/search/v2/articlesearch.json?q=${encodeURIComponent(query)}&api-key=${API_KEY}`;
+      const container = document.getElementById('articles');
+      container.innerHTML = "<p>Loading...</p>";
+
+      try {
+        const res = await fetch(endpoint);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+
+        container.innerHTML = "";
+        const articles = data.response.docs;
+
+        if (articles.length === 0) {
+          container.innerHTML = "<p>No results found.</p>";
+          return;
         }
+
+        articles.slice(0, 12).forEach(article => {
+          const title = article.headline.main;
+          const abstract = article.abstract || article.lead_paragraph || "";
+          const url = article.web_url;
+          const img = article.multimedia?.length
+            ? `https://www.nytimes.com/${article.multimedia[0].url}`
+            : "";
+
+          const div = document.createElement("div");
+          div.className = "article";
+          div.innerHTML = `
+            ${img ? `<img src="${img}" alt="" style="width:100%;border-radius:6px;">` : ""}
+            <div class="title">${title}</div>
+            <div class="abstract">${abstract}</div>
+            <a class="link" href="${url}" target="_blank">Read more →</a>
+          `;
+          container.appendChild(div);
+        });
+
+      } catch (err) {
+        console.error("Error fetching search results:", err);
+        container.innerHTML = "<p>Error loading articles. Check your API key or network.</p>";
       }
-
-      // Infinite scroll trigger
-      window.addEventListener("scroll", () => {
-        if (loading || reachedEnd) return;
-        if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 500) {
-          fetchSurveillanceArticles();
-        }
-      });
-
-      // Initial load
-      fetchSurveillanceArticles();
-    </script>
-  </body>
+    }
+  </script>
+</body>
 </html>

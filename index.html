@@ -10,15 +10,50 @@
     <body>
         <div class="container">
         <form>
-            <label for="fname">First name:</label><br>
-            <input type="text" id="fname" name="fname"><br>
-            <label for="lname">Last name:</label><br>
-            <input type="text" id="lname" name="lname">
+            <form onsubmit="saveAndGo(event)">
+                <label>First Name:</label>
+                <input id="fname" required><br>
+                <label>Last Name:</label>
+                <input id="lname" required><br>
         </form>
         <a href="three.html">
             <button type="submit">Submit</button>
         </a>
         </div>
-        <script type="module" src="/src/main.jsx"></script>
+        
+        <!-- <div>
+            <h1 
+                style="color: green;">GeeksforGeeks</h1>
+            <h3>Using localStorage Object</h3>
+            <label 
+                for="dataInput">Enter Data:</label>
+            <input
+                type="text"
+                id="dataInput">
+            <a href="three.html">
+                <button onclick="saveData()">Save Data</button>
+            </a>
+        </div> -->
+
+
+        <script>
+            function saveData() {
+                const data = document
+                    .getElementById('dataInput')
+                    .value;
+                localStorage
+                    .setItem('userData', data);
+                displayData();
+            }
+            function displayData() {
+                const savedData = localStorage
+                    .getItem('userData');
+                document
+                    .getElementById('savedData')
+                    .innerText = savedData;
+            }
+            displayData();
+        </script>
+
     </body>
 </html>

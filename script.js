@@ -3,6 +3,7 @@ import * as THREE from 'three';
 import Stats from 'three/addons/libs/stats.module.js';
 import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
 
+
 let camera, scene, renderer, stats, parameters;
 let mouseX = 0, mouseY = 0;
 
