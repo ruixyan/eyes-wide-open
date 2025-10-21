@@ -141,7 +141,6 @@ AFRAME.registerComponent('click-show-webcam', {
         <h2>Name: ${fullName}</h2>
         <p><strong>Birthday:</strong> ${birthday}</p>
         <p><strong>Birthplace:</strong> ${birthplace}</p>
-        <p>This is your <em>live</em> webcam feed reflected into the 3D environment.</p>
       `;
 
       const webcamCanvas = document.getElementById('webcamCanvas');

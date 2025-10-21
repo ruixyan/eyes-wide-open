@@ -2,13 +2,15 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <title>A-Frame Sphere + NYT Articles (Fixed JSON & Unique per Image)</title>
+  <title>eyes-wide-open</title>
 
+  <!-- A-Frame core + addons -->
   <script src="https://aframe.io/releases/1.6.0/aframe.min.js"></script>
   <script src="https://unpkg.com/aframe-look-at-component@0.8.0/dist/aframe-look-at-component.min.js"></script>
+
+  <!-- Font + stylesheet -->
   <link href="https://fonts.cdnfonts.com/css/vcr-osd-mono" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
-  <script src="ascript.js" defer></script>
 </head>
 
 <body>
@@ -24,10 +26,10 @@
         <a-entity geometry="primitive: plane; height: 0.03; width: 0.0035"
                   material="color: white; shader: flat"></a-entity>
       </a-entity>
+
       <a-cursor visible="false" raycaster="objects: .clickable"></a-cursor>
     </a-camera>
 
-    <!-- Sphere with images -->
     <a-entity image-sphere="
       radius: 100;
       images: [
@@ -57,17 +59,16 @@
         pngs/IMG_1636.png,
         pngs/screenshot.png
       ];
-    " look-at="#camera"></a-entity>
+    "></a-entity>
 
     <a-sky color="#000000"></a-sky>
   </a-scene>
 
-  <!-- Image overlay -->
+  <!-- Overlay UI -->
   <div id="image-overlay">
     <img id="overlay-img" src="" alt="Expanded view">
   </div>
 
-  <!-- Article card -->
   <div id="article-card">
     <div class="content">
       <h2>Loading...</h2>
@@ -75,7 +76,6 @@
     </div>
   </div>
 
-  <!-- UI overlay -->
   <div class="overlay">
     <div class="corner tl"></div>
     <div class="corner tr"></div>
@@ -84,5 +84,8 @@
     <div class="label" id="timestamp"></div>
     <div class="status">REC</div>
   </div>
+
+  <!-- Your external JS file -->
+  <script src="ascript.js"></script>
 </body>
 </html>

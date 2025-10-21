@@ -1,163 +1,221 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>eyes wide open — cube placeholder</title>
-  <link rel="stylesheet" href="style.css">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>eyes wide open</title>
+    <link rel="stylesheet" href="style.css" />
 
-  <script type="importmap">
-    {
-      "imports": {
-        "three": "https://unpkg.com/three@0.156.0/build/three.module.js",
-        "three/addons/": "https://unpkg.com/three@0.156.0/examples/jsm/"
+    <!-- A-Frame Core -->
+    <script src="https://aframe.io/releases/1.6.0/aframe.min.js"></script>
+    <!-- Orbit Controls -->
+    <script src="https://unpkg.com/aframe-orbit-controls-component@0.1.19/dist/aframe-orbit-controls-component.min.js"></script>
+
+    <style>
+      html,body { height:100%; margin:0; background:black; overflow:hidden; cursor:crosshair; }
+      a-scene { width:100vw; height:100vh; display:block; }
+      #scene-container { height:100vh; width:100vw; visibility:hidden; opacity:0; transition:opacity .9s ease; position:relative; }
+      #scene-container.visible { visibility:visible; opacity:1; }
+
+      /* Enter button */
+      #enterButton {
+        position:absolute;
+        bottom:2rem;
+        left:50%;
+        transform:translateX(-50%);
+        z-index:10;
+        font-family: 'VCR OSD Mono', monospace;
+        background-color:transparent;
+        color:#fff;
+        border:1px solid #fff;
+        padding:0.5rem 1rem;
+        cursor:pointer;
+        text-transform:uppercase;
+        text-shadow:0 0 6px #fff;
+        transition:0.18s ease;
       }
-    }
-  </script>
-</head>
-
-<body>
-  <!-- FORM SECTION -->
-  <div id="form-wrapper" class="container">
-    <form id="theForm">
-      <label for="fname">First Name:</label>
-      <input id="fname" name="fname" required autocomplete="given-name" placeholder="...">
-      <br>
-
-      <label for="lname">Last Name:</label>
-      <input id="lname" name="lname" required autocomplete="family-name" placeholder="...">
-      <br>
-
-      <label for="bplace">Birthplace:</label>
-      <input id="bplace" name="bplace" required autocomplete="birth-place" placeholder="...">
-      <br>
-
-      <label for="bdate">Birthdate:</label>
-      <input id="bdate" name="bdate" required autocomplete="birth-date" placeholder="MM/DD/YYYY">
-      <br>
-
-      <button type="submit">Execute</button>
-    </form>
-  </div>
-
-  <!-- 3D SCENE -->
-  <div id="scene-container" aria-hidden="true" style="display:none;">
-    <div id="welcome" aria-live="polite"></div>
-    <a href="a-frame.html">
-      <button>3D</button>
-    </a>
-  </div>
-
-  <script type="module">
-    import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.165/build/three.module.js";
-    import { OrbitControls } from "https://cdn.jsdelivr.net/npm/three@0.165/examples/jsm/controls/OrbitControls.js";
-    import { GLTFLoader } from "https://cdn.jsdelivr.net/npm/three@0.165/examples/jsm/loaders/GLTFLoader.js";
-
-    const form = document.getElementById('theForm');
-    const sceneContainer = document.getElementById('scene-container');
-    const formWrapper = document.getElementById('form-wrapper');
-    const welcome = document.getElementById('welcome');
-
-    let sceneInitialized = false;
-    let renderer, camera, scene, controls, animationId;
-
-    form.addEventListener('submit', (e) => {
-      e.preventDefault();
-
-      const firstName = document.getElementById('fname').value.trim();
-      const lastName = document.getElementById('lname').value.trim();
-      const birthplace = document.getElementById('bplace').value.trim();
-      const birthdate = document.getElementById('bdate').value.trim();
-
-      // Save all form data
-      localStorage.setItem('firstName', firstName);
-      localStorage.setItem('lastName', lastName);
-      localStorage.setItem('birthplace', birthplace);
-      localStorage.setItem('birthdate', birthdate);
-
-      // Hide form and show scene
-      formWrapper.style.display = 'none';
-      sceneContainer.style.display = 'block';
-      sceneContainer.setAttribute('aria-hidden', 'false');
-
-      welcome.textContent = `Welcome, ${firstName} ${lastName}`;
-
-      if (!sceneInitialized) {
-        initThree(sceneContainer);
-        sceneInitialized = true;
+      #enterButton:hover { background:#fff; color:#000; text-shadow:none; }
+      #fadeOverlay {
+        position:fixed; inset:0; background:#000; opacity:0; pointer-events:none; transition:opacity .8s ease; z-index:20;
       }
-    });
 
-    function initThree(container) {
-      renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
-      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-      renderer.setSize(window.innerWidth, window.innerHeight);
-      renderer.outputEncoding = THREE.sRGBEncoding;
-      container.appendChild(renderer.domElement);
+      /* ensure button is above A-Frame canvas */
+      .aframe-canvas {
+        pointer-events:none;
+      }
+    </style>
+  </head>
 
-      scene = new THREE.Scene();
-      camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 100);
-      camera.position.set(2.5, 2.0, 4.0);
+  <body>
+    <!-- FORM SECTION -->
+    <div id="form-wrapper" class="container">
+      <form id="theForm">
+        <label for="fname">First Name:</label>
+        <input id="fname" name="fname" required placeholder="..."><br>
+        <label for="lname">Last Name:</label>
+        <input id="lname" name="lname" required placeholder="..."><br>
+        <label for="bplace">Birthplace:</label>
+        <input id="bplace" name="bplace" required placeholder="..."><br>
+        <label for="bdate">Birthdate:</label>
+        <input id="bdate" name="bdate" required placeholder="MM/DD/YYYY"><br>
+        <button type="submit">SUBMIT</button>
+      </form>
+    </div>
 
-      const hemi = new THREE.HemisphereLight(0xffffff, 0x444444, 0.8);
-      hemi.position.set(0, 1, 0);
-      scene.add(hemi);
+    <!-- 3D SCENE -->
+    <div id="scene-container" aria-hidden="true">
+      <a-scene background="color: #000" shadow="type: pcfsoft" embedded>
+        <!-- Lights -->
+        <a-entity light="type: ambient; intensity: 0.4; color: #ffffff"></a-entity>
+        <a-entity light="type: directional; intensity: 1.0; color: #ffffff" position="2 4 3"></a-entity>
+        <a-entity light="type: point; intensity: 0.8; color: #ffaa88" position="-3 2 2"></a-entity>
+        <a-entity light="type: point; intensity: 0.6; color: #88aaff" position="3 2 -3"></a-entity>
 
-      const dir = new THREE.DirectionalLight(0xffffff, 0.8);
-      dir.position.set(3, 10, 5);
-      scene.add(dir);
+        <!-- Camera rig + mouse cursor (rayOrigin: mouse) so hover events fire -->
+        <a-entity id="cameraRig" position="0 1.65 4"
+                  orbit-controls="target: 0 0 0; enableDamping: true; dampingFactor: 0.1; minDistance: 1.2; maxDistance: 8;">
+          <a-entity camera look-controls="enabled: false">
+            <!-- explicitly set raycaster to objects: .interactive so we control which things receive events -->
+            <a-entity cursor="rayOrigin: mouse" raycaster="objects: .interactive"></a-entity>
+          </a-entity>
+        </a-entity>
 
-      const grid = new THREE.GridHelper(10, 10, 0x222222, 0x111111);
-      grid.position.y = -1.0;
-      scene.add(grid);
+        <!-- Model (class "interactive" so the cursor raycaster hits it) -->
+        <!-- NOTE: no A-Frame looping animation attribute here — spin is JS-driven -->
+        <a-entity id="mainModel"
+                  class="interactive"
+                  gltf-model="url(assets/camerafinal.glb)"
+                  position="0 -0.65 0"
+                  rotation="0 -90 0"
+                  scale="2 2 2"
+                  shadow="cast: true; receive: false">
+        </a-entity>
+      </a-scene>
 
-      const loader = new GLTFLoader();
-      loader.load('assets/camera5.glb', (gltf) => {
-        scene.add(gltf.scene);
-      }, undefined, (error) => {
-        console.error(error);
+      <!-- Enter button placed as sibling to <a-scene>, absolutely positioned over it -->
+      <button id="enterButton">Enter</button>
+    </div>
+
+    <div id="fadeOverlay"></div>
+
+    <script>
+      // Elements
+      const form = document.getElementById('theForm');
+      const formWrapper = document.getElementById('form-wrapper');
+      const sceneContainer = document.getElementById('scene-container');
+      const model = document.getElementById('mainModel');
+      const cameraRig = document.getElementById('cameraRig');
+      const enterButton = document.getElementById('enterButton');
+      const fadeOverlay = document.getElementById('fadeOverlay');
+
+      // Show scene after form submit
+      form.addEventListener('submit', (e) => {
+        e.preventDefault();
+        // store fields if you want
+        formWrapper.style.display = 'none';
+        sceneContainer.classList.add('visible');
+        sceneContainer.setAttribute('aria-hidden','false');
+        // let aframe initialize and resize canvas
+        setTimeout(()=>window.dispatchEvent(new Event('resize')), 120);
       });
 
-      controls = new OrbitControls(camera, renderer.domElement);
-      controls.target.set(0, 0.25, 0);
-      controls.enableDamping = true;
-      controls.dampingFactor = 0.08;
-      controls.minDistance = 1.5;
-      controls.maxDistance = 10;
+      // ----------------------------
+      // Controlled spin loop (JS)
+      // ----------------------------
+      let isSpinning = true;
+      const spinRPM = 3.0; // revolutions per minute; adjust speed here (3 rpm -> slow)
+      const spinSpeedDegPerSec = spinRPM * 360 / 60; // deg/sec
 
-      let lastTime = performance.now();
-      function animate(now) {
-        animationId = requestAnimationFrame(animate);
-        const dt = (now - lastTime) / 1000;
-        lastTime = now;
-        controls.update();
-        renderer.render(scene, camera);
+      let lastTime = null;
+      function spinFrame(time) {
+        if (!lastTime) lastTime = time;
+        const dt = (time - lastTime) / 1000; // seconds
+        lastTime = time;
+        if (isSpinning) {
+          const rot = model.getAttribute('rotation');
+          // add based on time delta (smooth & framerate independent)
+          rot.y = (rot.y + spinSpeedDegPerSec * dt) % 360;
+          model.setAttribute('rotation', rot);
+        }
+        requestAnimationFrame(spinFrame);
       }
-      animationId = requestAnimationFrame(animate);
+      requestAnimationFrame(spinFrame);
 
-      window.addEventListener('resize', onWindowResize);
-    }
+      // ----------------------------
+      // Hover handling (mouseenter/mouseleave)
+      // ----------------------------
+      // Ensure hover events fire: model has class 'interactive' and the cursor has raycaster objects: .interactive
+      // On enter: pause spin then animate to front-facing; on leave: remove hover animation and resume spin after animation duration
+      const HOVER_DUR = 600; // ms for face animation
 
-    function onWindowResize() {
-      if (!camera || !renderer) return;
-      camera.aspect = window.innerWidth / window.innerHeight;
-      camera.updateProjectionMatrix();
-      renderer.setSize(window.innerWidth, window.innerHeight);
-    }
+      model.addEventListener('mouseenter', () => {
+        // pause spin
+        isSpinning = false;
 
-    (function autoOpenIfNameSaved() {
-      const fn = localStorage.getItem('firstName');
-      const ln = localStorage.getItem('lastName');
-      const bp = localStorage.getItem('birthplace');
-      const bd = localStorage.getItem('birthdate');
+        // remove any preexisting hover/front animations
+        model.removeAttribute('animation__hover');
+        model.removeAttribute('animation__front');
 
-      if (fn || ln || bp || bd) {
-        document.getElementById('fname').value = fn || '';
-        document.getElementById('lname').value = ln || '';
-        document.getElementById('bplace').value = bp || '';
-        document.getElementById('bdate').value = bd || '';
-      }
-    })();
-  </script>
-</body>
+        // animate to face-forward (Y = -90)
+        model.setAttribute('animation__hover', `property: rotation; to: 0 -90 0; dur: ${HOVER_DUR}; easing: easeInOutQuad`);
+      });
+
+      model.addEventListener('mouseleave', () => {
+        // remove hover animation so we can resume spinning cleanly
+        model.removeAttribute('animation__hover');
+
+        // small timeout to match the hover animation duration, then resume spinning
+        setTimeout(() => {
+          // normalize rotation to in-range value first
+          const r = model.getAttribute('rotation');
+          r.y = ((r.y % 360) + 360) % 360;
+          model.setAttribute('rotation', r);
+          isSpinning = true;
+        }, HOVER_DUR);
+      });
+
+      // ----------------------------
+      // Enter button click -> front, zoom, fade, redirect
+      // ----------------------------
+      enterButton.addEventListener('click', () => {
+        // stop spinning immediately
+        isSpinning = false;
+
+        // normalize current rotation
+        const currentRot = model.getAttribute('rotation');
+        const normalizedY = ((currentRot.y % 360) + 360) % 360;
+        model.setAttribute('rotation', { x:0, y: 0, z:0 });
+
+        // animate model to front-facing
+        const FRONT_DUR = 800;
+        model.removeAttribute('animation__front');
+        model.setAttribute('animation__front', `property: rotation; to: 0 -90 0; dur: ${FRONT_DUR}; easing: easeInOutQuad`);
+
+        // after front animation completes, zoom camera
+        setTimeout(() => {
+          // zoom target: tweak these values to taste (x,y,z)
+          const ZOOM_Y = 1.6;
+          const ZOOM_Z = 1.0; // closer
+          cameraRig.removeAttribute('animation__zoom');
+          cameraRig.setAttribute('animation__zoom', `property: position; to: 0 ${ZOOM_Y} ${ZOOM_Z}; dur: 1000; easing: easeInOutQuad`);
+
+          // start fade a little before redirect
+          setTimeout(() => {
+            fadeOverlay.style.opacity = '1';
+            setTimeout(()=> {
+              // replace URL with your destination
+              window.location.href = 'a-frame.html';
+            }, 800);
+          }, 1000); // start fade shortly before zoom ends
+        }, FRONT_DUR + 40);
+      });
+
+      // Optional: keyboard Enter key to trigger same action when scene is visible
+      window.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && sceneContainer.classList.contains('visible')) {
+          enterButton.click();
+        }
+      });
+    </script>
+  </body>
 </html>
