@@ -173,7 +173,7 @@ AFRAME.registerComponent('click-show-webcam', {
       cnt.innerHTML = `
         <h2>Name: ${fullName}</h2>
         <p><strong>Birthday:</strong> ${birthday}</p>
-        <p><strong>Birthplace:</strong> ${birthplace}</p>
+        <p><strong>Birthplace:</strong> Boston</p>
       `;
 
       const webcamCanvas = document.getElementById('webcamCanvas');
