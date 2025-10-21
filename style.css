@@ -1,77 +1,230 @@
 @font-face {
-    font-family: FragmentMono-Regular;
-    src: url(FragmentMono-Regular.ttf);
-  }
+  font-family: 'FragmentMono-Regular';
+  src: url('FragmentMono-Regular.ttf');
+}
 
-  @font-face {
-    font-family: VCR OSD Mono;
-    src: url(VCR_OSD_MONO_1.001.ttf);
-  }
+@font-face {
+  font-family: 'VCR OSD Mono';
+  src: url('VCR_OSD_MONO_1.001.ttf');
+}
 
+/* ===== GLOBAL STYLES ===== */
 body {
-    background-color: #000;
-    color: #fff;
-    font-family: VCR OSD Mono, monospace;
-    font-size: 13px;
-    line-height: 24px;
-    overscroll-behavior: none;
+  background-color: #000;
+  color: #ffffff;
+  font-family: 'VCR OSD Mono', monospace;
+  font-size: 14px;
+  line-height: 1.6;
+  margin: 0;
+  padding: 0;
+  overscroll-behavior: none;
 }
 
+body::after {
+  content: "";
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    to bottom,
+    rgba(0, 255, 0, 0.05),
+    rgba(0, 255, 0, 0.05) 1px,
+    transparent 2px,
+    transparent 3px
+  );
+  opacity: 0.2;
+}
+
+/* ===== CONTAINER ===== */
 .container {
-    position: absolute;
-    top: 1rem;
-    width: 100%;
-    padding: 1rem;
-    box-sizing: border-box;
-    text-align: left;
+  position: fixed;
+  top: 2rem;
+  left: 2rem;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  max-width: 320px;
 }
 
-button {
-    font-family: VCR OSD Mono, monospace;
-    background-color: #000;
-    color: #fff;
-    border: 1px solid #fff;
-    padding: 0.5rem 1rem;
-    margin-top: 1rem;
-    cursor: pointer;
-    text-transform: uppercase;
+/* ===== LABELS ===== */
+label {
+  text-transform: none;
+  font-size: 13px;
+  letter-spacing: 0.5px;
 }
 
+/* ===== INPUTS ===== */
 input {
-    font-family: VCR OSD Mono, monospace;
-    background-color: #000;
-    color: #fff;
-    /* border: 1px solid #fff; */
-    padding: 0.5rem 1rem;
-    margin-top: 1rem;
-    cursor: pointer;
-    text-transform: uppercase;
+  font-family: 'VCR OSD Mono', monospace;
+  background-color: transparent;
+  color: #ffffff;
+  border: none;
+  border-bottom: 1px solid #ffffff;
+  padding: 4px 0;
+  width: 220px;
+  outline: none;
+  caret-color: #ffffff;
+  text-shadow: 0 0 4px #ffffff;
 }
 
+input:focus {
+  border-bottom: 1px solid #ffffff;
+}
+
+input::placeholder {
+  color: rgba(255, 255, 255, 0.4);
+}
+
+/* ===== BUTTON ===== */
+button {
+  font-family: 'VCR OSD Mono', monospace;
+  background-color: transparent;
+  color: #ffffff;
+  border: 1px solid #ffffff;
+  padding: 0.5rem 1rem;
+  margin-top: 1rem;
+  cursor: pointer;
+  text-transform: uppercase;
+  transition: 0.2s ease;
+  text-shadow: 0 0 6px #ffffff;
+}
+
+button:hover {
+  background-color: #ffffff;
+  color: #000;
+  text-shadow: none;
+}
+
+/* ===== POPUP CARD ===== */
 .card {
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    background: rgba(0,0,0,0.85);
-    color: white;
-    padding: 20px 30px;
-    border: 2px solid white;
-    border-radius: 12px;
-    font-family: 'VCR OSD Mono', monospace;
-    font-size: 18px;
-    text-align: center;
-    display: none; /* hidden by default */
-    z-index: 10000;
-  }
-  .card button {
-    margin-top: 12px;
-    background: white;
-    color: black;
-    border: none;
-    padding: 6px 12px;
-    cursor: pointer;
-    font-family: inherit;
-    font-size: 14px;
-  }
-  
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(0,0,0,0.95);
+  color: #ffffff;
+  padding: 20px 30px;
+  border: 1px solid #ffffff;
+  border-radius: 8px;
+  font-family: 'VCR OSD Mono', monospace;
+  font-size: 16px;
+  text-align: center;
+  display: none;
+  z-index: 10000;
+  box-shadow: 0 0 10px #ffffff;
+  text-shadow: 0 0 6px #ffffff;
+}
+
+.card button {
+  margin-top: 12px;
+  background: transparent;
+  color: #ffffff;
+  border: 1px solid #ffffff;
+  padding: 6px 12px;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 14px;
+  text-shadow: 0 0 4px #ffffff;
+}
+
+.card button:hover {
+  background: #ffffff;
+  color: #000;
+  text-shadow: none;
+}
+
+a-scene {
+  width: 100vw;
+  height: 100vh;
+  display: block;
+}
+
+.corner {
+  position: absolute;
+  width: 48px;
+  height: 48px;
+  box-sizing: border-box;
+  border: 4px solid #fff;
+  z-index: 9999;
+}
+.corner.tl { top: 16px; left: 16px; border-bottom: none; border-right: none; }
+.corner.tr { top: 16px; right: 16px; border-bottom: none; border-left: none; }
+.corner.bl { bottom: 16px; left: 16px; border-top: none; border-right: none; }
+.corner.br { bottom: 16px; right: 16px; border-top: none; border-left: none; }
+.label {
+  position: absolute;
+  left: 30px;
+  bottom: 30px;
+  color: #fff;
+  font-size: 14px;
+}
+.status {
+  position: absolute;
+  right: 30px;
+  top: 30px;
+  color: #fff;
+  font-size: 12px;
+  text-transform: uppercase;
+}
+
+/* Article card */
+#article-card {
+  position: fixed;
+  right: 0; top: 0;
+  width: 40%; height: 100%;
+  background: rgba(10,10,10,0.9);
+  color: #fff;
+  transform: translateX(100%);
+  transition: transform 0.8s ease, opacity 0.5s ease;
+  opacity: 0; z-index: 10000;
+  display: flex; align-items: top; justify-content: center;
+  /* box-shadow: -8px 0 30px rgba(0,0,0,0.5); */
+}
+#article-card.show {
+  transform: translateX(0);
+  opacity: 1;
+}
+#article-card .content {
+  padding: 80px;
+  max-width: 500px;
+}
+#article-card h2 { 
+  margin-bottom: 1em; 
+  font-size: 24px; 
+  border-bottom: 2px solid #fff; 
+  padding-bottom: 0.5em; 
+}
+
+#article-card p { 
+font-family:'FragmentMono-Regular'; 
+font-size: 14px; 
+line-height: 1.6em; 
+color: #ccc; }
+
+/* Image overlay */
+#image-overlay {
+  position: fixed;
+  top: 0; left: 0;
+  width: 60%; height: 100%;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(0,0,0,0.8);
+  transform: translateX(-100%);
+  opacity: 0;
+  transition: transform 0.8s ease, opacity 0.5s ease;
+  z-index: 9999;
+}
+#image-overlay.show {
+  transform: translateX(0);
+  opacity: 1;
+}
+#image-overlay img {
+  max-width: 75%;
+  max-height: 75%;
+  border: 3px solid white;
+  border-radius: 4px;
+  box-shadow: 0 0 20px rgba(255,255,255,0.3);
+}

@@ -7,257 +7,8 @@
   <script src="https://aframe.io/releases/1.6.0/aframe.min.js"></script>
   <script src="https://unpkg.com/aframe-look-at-component@0.8.0/dist/aframe-look-at-component.min.js"></script>
   <link href="https://fonts.cdnfonts.com/css/vcr-osd-mono" rel="stylesheet">
-
-  <style>
-    @import url('https://fonts.cdnfonts.com/css/vcr-osd-mono');
-    body {
-      margin: 0;
-      overflow: hidden;
-      background: #000;
-      font-family: 'VCR OSD Mono', monospace;
-    }
-
-    @font-face {
-    font-family: FragmentMono-Regular;
-    src: url(FragmentMono-Regular.ttf);
-  }
-
-    a-scene {
-      width: 100vw;
-      height: 100vh;
-      display: block;
-    }
-
-    .corner {
-      position: absolute;
-      width: 48px;
-      height: 48px;
-      box-sizing: border-box;
-      border: 4px solid #fff;
-    }
-    .corner.tl { top: 16px; left: 16px; border-bottom: none; border-right: none; }
-    .corner.tr { top: 16px; right: 16px; border-bottom: none; border-left: none; }
-    .corner.bl { bottom: 16px; left: 16px; border-top: none; border-right: none; }
-    .corner.br { bottom: 16px; right: 16px; border-top: none; border-left: none; }
-    .label {
-      position: absolute;
-      left: 30px;
-      bottom: 30px;
-      color: #fff;
-      font-size: 14px;
-    }
-    .status {
-      position: absolute;
-      right: 30px;
-      top: 30px;
-      color: #fff;
-      font-size: 12px;
-      text-transform: uppercase;
-    }
-
-    /* Article card */
-    #article-card {
-      position: fixed;
-      right: 0; top: 0;
-      width: 40%; height: 100%;
-      background: rgba(10,10,10,0.9);
-      color: #fff;
-      transform: translateX(100%);
-      transition: transform 0.8s ease, opacity 0.5s ease;
-      opacity: 0; z-index: 10000;
-      display: flex; align-items: top; justify-content: center;
-      box-shadow: -8px 0 30px rgba(0,0,0,0.5);
-    }
-    #article-card.show {
-      transform: translateX(0);
-      opacity: 1;
-    }
-    #article-card .content {
-      padding: 40px;
-      max-width: 500px;
-    }
-    #article-card h2 { margin-bottom: 1em; font-size: 24px; border-bottom: 2px solid #fff; padding-bottom: 0.5em; }
-    #article-card p { font-family:'FragmentMono-Regular'; font-size: 14px; line-height: 1.6em; color: #ccc; }
-
-    /* Image overlay */
-    #image-overlay {
-      position: fixed;
-      top: 0; left: 0;
-      width: 60%; height: 100%;
-      display: flex; align-items: center; justify-content: center;
-      background: rgba(0,0,0,0.8);
-      transform: translateX(-100%);
-      opacity: 0;
-      transition: transform 0.8s ease, opacity 0.5s ease;
-      z-index: 9999;
-    }
-    #image-overlay.show {
-      transform: translateX(0);
-      opacity: 1;
-    }
-    #image-overlay img {
-      max-width: 90%;
-      max-height: 90%;
-      border: 3px solid white;
-      border-radius: 8px;
-      box-shadow: 0 0 20px rgba(255,255,255,0.3);
-    }
-  </style>
-
-  <script>
-    let webcamPlaneEl = null;
-    let nytArticles = [];
-
-    // Fetch NYT articles
-    async function fetchNYTArticles(keyword = 'surveillance') {
-      const apiKey = "JFjJBC7AGXwfjBKCCR0EnpNPntdKPoYr"; // Replace with your NYT API key
-      const url = `https://api.nytimes.com/svc/search/v2/articlesearch.json?q=${encodeURIComponent(keyword)}&sort=newest&api-key=${apiKey}`;
-      try {
-        const resp = await fetch(url);
-        const data = await resp.json();
-        const docs = data.response?.docs || [];
-        nytArticles = docs.map(doc => ({
-          headline: doc.headline.main,
-          abstract: doc.abstract || doc.lead_paragraph || 'No description available.',
-          url: doc.web_url
-        }));
-        return nytArticles;
-      } catch (err) {
-        console.error('NYT fetch error:', err);
-        return [];
-      }
-    }
-
-    // Sphere component
-    AFRAME.registerComponent('image-sphere', {
-      schema: { radius: { type: 'number', default: 20 }, images: { type: 'array' } },
-      async init() {
-        const container = this.el;
-        const { radius, images } = this.data;
-
-        const articles = await fetchNYTArticles();
-        const total = images.length;
-
-        for (let i = 0; i < total; i++) {
-          const y = 1 - (i / (total - 1)) * 2;
-          const r = Math.sqrt(1 - y * y);
-          const phi = i * Math.PI * (3 - Math.sqrt(5));
-          const x = Math.cos(phi) * r;
-          const z = Math.sin(phi) * r;
-
-          if (i === 16) {
-            const plane = document.createElement('a-plane');
-            plane.setAttribute('material', 'shader: standard; src: #webcamCanvas;');
-            plane.setAttribute('width', 10);
-            plane.setAttribute('height', 6);
-            plane.setAttribute('position', `${x * radius} ${y * radius} ${z * radius}`);
-            plane.setAttribute('look-at', '#camera');
-            container.appendChild(plane);
-            webcamPlaneEl = plane;
-          } else {
-            const img = document.createElement('a-image');
-            img.setAttribute('src', images[i]);
-            img.setAttribute('width', 8);
-            img.setAttribute('height', 11);
-            img.setAttribute('position', `${x * radius} ${y * radius} ${z * radius}`);
-            img.setAttribute('look-at', '#camera');
-            img.setAttribute('class', 'clickable');
-
-            // Assign article or fallback
-            let article = articles[i % articles.length];
-            if (!article) {
-              article = {
-                headline: "Surveillance and Society",
-                abstract: "Article data unavailable. This is placeholder text for demo purposes.",
-                url: "https://www.nytimes.com"
-              };
-            }
-
-            img.setAttribute('data-article', JSON.stringify(article));
-            img.setAttribute('click-show-nyt', '');
-            container.appendChild(img);
-          }
-        }
-      }
-    });
-
-    // Click behavior
-    AFRAME.registerComponent('click-show-nyt', {
-      init: function () {
-        this.el.addEventListener('click', () => {
-          const img = this.el;
-          const attr = img.getAttribute('data-article');
-          if (!attr) return;
-          let article;
-          try { article = JSON.parse(attr); } 
-          catch { return; }
-
-          const imageOverlay = document.getElementById('image-overlay');
-          const overlayImg = document.getElementById('overlay-img');
-          const card = document.getElementById('article-card');
-
-          overlayImg.src = img.getAttribute('src');
-          imageOverlay.classList.add('show');
-          card.classList.add('show');
-
-          const cnt = card.querySelector('.content');
-          cnt.innerHTML = `
-            <h2>${article.headline}</h2>
-            <p>${article.abstract}</p>
-            <p><a href="${article.url}" target="_blank" style="color: cyan;">Read full article →</a></p>
-          `;
-        });
-      }
-    });
-
-    // Webcam setup
-    window.addEventListener('load', () => {
-      const video = document.getElementById('webcam');
-      const canvas = document.getElementById('webcamCanvas');
-      if (!video || !canvas) return;
-      const ctx = canvas.getContext('2d');
-
-      navigator.mediaDevices.getUserMedia({ video: true, audio: false })
-        .then(stream => { video.srcObject = stream; video.play().catch(()=>{}); })
-        .catch(err => console.error('Webcam error:', err));
-
-      video.addEventListener('loadedmetadata', () => {
-        canvas.width = video.videoWidth || 1040;
-        canvas.height = video.videoHeight || 880;
-        setInterval(drawFrame, 100); // update every 100ms instead of each frame
-      });
-
-      function drawFrame() {
-        ctx.filter = 'grayscale(100%)';
-        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-        if (webcamPlaneEl) {
-          const mesh = webcamPlaneEl.getObject3D && webcamPlaneEl.getObject3D('mesh');
-          if (mesh && mesh.material && mesh.material.map) mesh.material.map.needsUpdate = true;
-        }
-        requestAnimationFrame(drawFrame);
-      }
-    });
-
-    // Close overlays
-    window.addEventListener('keydown', e => { if (e.key === 'Escape') closeOverlays(); });
-    window.addEventListener('click', e => {
-      if (e.target.id === 'image-overlay' || e.target.id === 'article-card') closeOverlays();
-    });
-    function closeOverlays() {
-      document.getElementById('image-overlay').classList.remove('show');
-      document.getElementById('article-card').classList.remove('show');
-    }
-
-    // Timestamp
-    window.addEventListener('DOMContentLoaded', () => {
-      const t = document.getElementById('timestamp');
-      setInterval(() => {
-        const now = new Date();
-        const pad = n => String(n).padStart(2, '0');
-        t.textContent = `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
-      }, 1000);
-    });
-  </script>
+  <link rel="stylesheet" href="style.css">
+  <script src="ascript.js" defer></script>
 </head>
 
 <body>
@@ -266,20 +17,19 @@
 
   <a-scene vr-mode-ui="enabled: false">
     <a-camera id="camera" wasd-controls-enabled="false" position="0 1.6 0">
-      <!-- <a-cursor raycaster="objects: .clickable" material="color: white; shader: flat"></a-cursor> -->
+      <!-- Crosshair -->
       <a-entity id="crosshair" position="0 0 -1">
         <a-entity geometry="primitive: plane; height: 0.0035; width: 0.03"
                   material="color: white; shader: flat"></a-entity>
         <a-entity geometry="primitive: plane; height: 0.03; width: 0.0035"
                   material="color: white; shader: flat"></a-entity>
       </a-entity>
-      
       <a-cursor visible="false" raycaster="objects: .clickable"></a-cursor>
-      
     </a-camera>
 
+    <!-- Sphere with images -->
     <a-entity image-sphere="
-      radius: 40;
+      radius: 100;
       images: [
         pngs/IMG_1495.png,
         pngs/IMG_1512.png,
@@ -307,14 +57,25 @@
         pngs/IMG_1636.png,
         pngs/screenshot.png
       ];
-    "></a-entity>
+    " look-at="#camera"></a-entity>
 
     <a-sky color="#000000"></a-sky>
   </a-scene>
 
-  <div id="image-overlay"><img id="overlay-img" src="" alt="Expanded view"></div>
-  <div id="article-card"><div class="content"><h2>Loading...</h2><p>Fetching article...</p></div></div>
+  <!-- Image overlay -->
+  <div id="image-overlay">
+    <img id="overlay-img" src="" alt="Expanded view">
+  </div>
 
+  <!-- Article card -->
+  <div id="article-card">
+    <div class="content">
+      <h2>Loading...</h2>
+      <p>Fetching article...</p>
+    </div>
+  </div>
+
+  <!-- UI overlay -->
   <div class="overlay">
     <div class="corner tl"></div>
     <div class="corner tr"></div>

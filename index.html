@@ -1,59 +1,163 @@
 <!DOCTYPE html>
 <html lang="en">
-    <head>
-        <meta charset="UTF-8" />
-        <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>eyes wide open</title>
-        <link rel="stylesheet" href="style.css">
-    </head>
-    <body>
-        <div class="container">
-        <form>
-            <form onsubmit="saveAndGo(event)">
-                <label>First Name:</label>
-                <input id="fname" required><br>
-                <label>Last Name:</label>
-                <input id="lname" required><br>
-        </form>
-        <a href="three.html">
-            <button type="submit">Submit</button>
-        </a>
-        </div>
-        
-        <!-- <div>
-            <h1 
-                style="color: green;">GeeksforGeeks</h1>
-            <h3>Using localStorage Object</h3>
-            <label 
-                for="dataInput">Enter Data:</label>
-            <input
-                type="text"
-                id="dataInput">
-            <a href="three.html">
-                <button onclick="saveData()">Save Data</button>
-            </a>
-        </div> -->
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>eyes wide open — cube placeholder</title>
+  <link rel="stylesheet" href="style.css">
 
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://unpkg.com/three@0.156.0/build/three.module.js",
+        "three/addons/": "https://unpkg.com/three@0.156.0/examples/jsm/"
+      }
+    }
+  </script>
+</head>
 
-        <script>
-            function saveData() {
-                const data = document
-                    .getElementById('dataInput')
-                    .value;
-                localStorage
-                    .setItem('userData', data);
-                displayData();
-            }
-            function displayData() {
-                const savedData = localStorage
-                    .getItem('userData');
-                document
-                    .getElementById('savedData')
-                    .innerText = savedData;
-            }
-            displayData();
-        </script>
+<body>
+  <!-- FORM SECTION -->
+  <div id="form-wrapper" class="container">
+    <form id="theForm">
+      <label for="fname">First Name:</label>
+      <input id="fname" name="fname" required autocomplete="given-name" placeholder="...">
+      <br>
 
-    </body>
+      <label for="lname">Last Name:</label>
+      <input id="lname" name="lname" required autocomplete="family-name" placeholder="...">
+      <br>
+
+      <label for="bplace">Birthplace:</label>
+      <input id="bplace" name="bplace" required autocomplete="birth-place" placeholder="...">
+      <br>
+
+      <label for="bdate">Birthdate:</label>
+      <input id="bdate" name="bdate" required autocomplete="birth-date" placeholder="MM/DD/YYYY">
+      <br>
+
+      <button type="submit">Execute</button>
+    </form>
+  </div>
+
+  <!-- 3D SCENE -->
+  <div id="scene-container" aria-hidden="true" style="display:none;">
+    <div id="welcome" aria-live="polite"></div>
+    <a href="a-frame.html">
+      <button>3D</button>
+    </a>
+  </div>
+
+  <script type="module">
+    import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.165/build/three.module.js";
+    import { OrbitControls } from "https://cdn.jsdelivr.net/npm/three@0.165/examples/jsm/controls/OrbitControls.js";
+    import { GLTFLoader } from "https://cdn.jsdelivr.net/npm/three@0.165/examples/jsm/loaders/GLTFLoader.js";
+
+    const form = document.getElementById('theForm');
+    const sceneContainer = document.getElementById('scene-container');
+    const formWrapper = document.getElementById('form-wrapper');
+    const welcome = document.getElementById('welcome');
+
+    let sceneInitialized = false;
+    let renderer, camera, scene, controls, animationId;
+
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+
+      const firstName = document.getElementById('fname').value.trim();
+      const lastName = document.getElementById('lname').value.trim();
+      const birthplace = document.getElementById('bplace').value.trim();
+      const birthdate = document.getElementById('bdate').value.trim();
+
+      // Save all form data
+      localStorage.setItem('firstName', firstName);
+      localStorage.setItem('lastName', lastName);
+      localStorage.setItem('birthplace', birthplace);
+      localStorage.setItem('birthdate', birthdate);
+
+      // Hide form and show scene
+      formWrapper.style.display = 'none';
+      sceneContainer.style.display = 'block';
+      sceneContainer.setAttribute('aria-hidden', 'false');
+
+      welcome.textContent = `Welcome, ${firstName} ${lastName}`;
+
+      if (!sceneInitialized) {
+        initThree(sceneContainer);
+        sceneInitialized = true;
+      }
+    });
+
+    function initThree(container) {
+      renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      renderer.outputEncoding = THREE.sRGBEncoding;
+      container.appendChild(renderer.domElement);
+
+      scene = new THREE.Scene();
+      camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 100);
+      camera.position.set(2.5, 2.0, 4.0);
+
+      const hemi = new THREE.HemisphereLight(0xffffff, 0x444444, 0.8);
+      hemi.position.set(0, 1, 0);
+      scene.add(hemi);
+
+      const dir = new THREE.DirectionalLight(0xffffff, 0.8);
+      dir.position.set(3, 10, 5);
+      scene.add(dir);
+
+      const grid = new THREE.GridHelper(10, 10, 0x222222, 0x111111);
+      grid.position.y = -1.0;
+      scene.add(grid);
+
+      const loader = new GLTFLoader();
+      loader.load('assets/camera5.glb', (gltf) => {
+        scene.add(gltf.scene);
+      }, undefined, (error) => {
+        console.error(error);
+      });
+
+      controls = new OrbitControls(camera, renderer.domElement);
+      controls.target.set(0, 0.25, 0);
+      controls.enableDamping = true;
+      controls.dampingFactor = 0.08;
+      controls.minDistance = 1.5;
+      controls.maxDistance = 10;
+
+      let lastTime = performance.now();
+      function animate(now) {
+        animationId = requestAnimationFrame(animate);
+        const dt = (now - lastTime) / 1000;
+        lastTime = now;
+        controls.update();
+        renderer.render(scene, camera);
+      }
+      animationId = requestAnimationFrame(animate);
+
+      window.addEventListener('resize', onWindowResize);
+    }
+
+    function onWindowResize() {
+      if (!camera || !renderer) return;
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    }
+
+    (function autoOpenIfNameSaved() {
+      const fn = localStorage.getItem('firstName');
+      const ln = localStorage.getItem('lastName');
+      const bp = localStorage.getItem('birthplace');
+      const bd = localStorage.getItem('birthdate');
+
+      if (fn || ln || bp || bd) {
+        document.getElementById('fname').value = fn || '';
+        document.getElementById('lname').value = ln || '';
+        document.getElementById('bplace').value = bp || '';
+        document.getElementById('bdate').value = bd || '';
+      }
+    })();
+  </script>
+</body>
 </html>
