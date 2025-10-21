@@ -22,6 +22,38 @@ async function fetchNYTArticles(keyword = 'surveillance') {
   }
 }
 
+
+
+// === Hover Border for Images (no clipping) ===
+AFRAME.registerComponent('hover-border', {
+  init: function () {
+    const el = this.el;
+    const w = el.getAttribute('width');
+    const h = el.getAttribute('height');
+    let borderPlane;
+
+    // Create the border plane once
+    borderPlane = document.createElement('a-plane');
+    borderPlane.setAttribute('width', w * 1.05);
+    borderPlane.setAttribute('height', h * 1.05);
+    borderPlane.setAttribute('color', 'white');
+    borderPlane.setAttribute('shader', 'flat');
+    borderPlane.setAttribute('visible', 'false');
+    borderPlane.object3D.position.set(0, 0, -0.3); // moved further back
+    el.appendChild(borderPlane);
+
+    // Hover in/out handlers
+    el.addEventListener('mouseenter', () => {
+      borderPlane.setAttribute('visible', 'true');
+    });
+
+    el.addEventListener('mouseleave', () => {
+      borderPlane.setAttribute('visible', 'false');
+    });
+  }
+});
+
+
 // === Sphere Component ===
 AFRAME.registerComponent('image-sphere', {
   schema: {
@@ -61,6 +93,8 @@ AFRAME.registerComponent('image-sphere', {
         img.setAttribute('position', `${x * radius} ${y * radius} ${z * radius}`);
         img.setAttribute('look-at', '#camera');
         img.setAttribute('class', 'clickable');
+        img.setAttribute('click-show-nyt', '');
+        img.setAttribute('hover-border', '');
 
         let article = articles[i % articles.length] || {
           headline: "Surveillance and Society",
@@ -69,7 +103,6 @@ AFRAME.registerComponent('image-sphere', {
         };
 
         img.setAttribute('data-article', JSON.stringify(article));
-        img.setAttribute('click-show-nyt', '');
         container.appendChild(img);
       }
     }
@@ -171,7 +204,7 @@ window.addEventListener('load', () => {
   const ctx = canvas.getContext('2d');
 
   navigator.mediaDevices.getUserMedia({
-    video: { width: 640, height: 360 },  // downscale for better performance
+    video: { width: 640, height: 360 },
     audio: false
   })
   .then(stream => { video.srcObject = stream; })
@@ -181,7 +214,6 @@ window.addEventListener('load', () => {
     canvas.width = video.videoWidth || 640;
     canvas.height = video.videoHeight || 360;
 
-    // draw every 100ms, no double render loop
     setInterval(() => {
       ctx.filter = 'grayscale(100%)';
       ctx.drawImage(video, 0, 0, canvas.width, canvas.height);

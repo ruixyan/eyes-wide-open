@@ -30,6 +30,18 @@
       <a-cursor visible="false" raycaster="objects: .clickable"></a-cursor>
     </a-camera>
 
+<!-- Ambient Light -->
+<a-entity light="type: ambient; color: #aaa; intensity: 0.5"></a-entity>
+
+<!-- Point Light at center of the sphere -->
+<a-entity light="type: point; color: #ffffff; intensity: 1.2; distance: 300; decay: 2" position="0 0 0"></a-entity>
+
+<!-- Fog for depth -->
+<a-scene fog="type: exponential; color: #0a0a0a; density: 0.0015"></a-scene>
+
+
+
+
     <a-entity image-sphere="
       radius: 100;
       images: [
@@ -37,22 +49,22 @@
         pngs/IMG_1512.png,
         pngs/IMG_1542.png,
         pngs/IMG_1544.png,
-        pngs/IMG_1552.png,
+        pngs/vid2.mp4,
         pngs/IMG_1558.png,
         pngs/IMG_1559.png,
         pngs/IMG_1560.png,
-        pngs/IMG_1562.png,
+        pngs/vid3.mp4,
         pngs/IMG_1564.png,
         pngs/IMG_1566.png,
-        pngs/IMG_1569.png,
+        pngs/vid5.mp4,
         pngs/IMG_1573.png,
         pngs/IMG_1575.png,
         pngs/IMG_1582.png,
         pngs/IMG_1583.png,
-        pngs/IMG_1587.png,
+        pngs/vid1.mp4,
         pngs/IMG_1588.png,
         pngs/IMG_1596.png,
-        pngs/IMG_1607.png,
+        pngs/vid4.mp4,
         pngs/IMG_1617.png,
         pngs/IMG_1619.png,
         pngs/IMG_1622.png,
@@ -61,7 +73,7 @@
       ];
     "></a-entity>
 
-    <a-sky color="#000000"></a-sky>
+    <a-sky color="#0a0a0a"></a-sky>
   </a-scene>
 
   <!-- Overlay UI -->
@@ -82,10 +94,14 @@
     <div class="corner bl"></div>
     <div class="corner br"></div>
     <div class="label" id="timestamp"></div>
-    <div class="status">REC</div>
+    <div class="status"><span class="rec-indicator"></span>   REC</div>
   </div>
 
-  <!-- Your external JS file -->
+  <!-- Webcam Overlay -->
+<div id="webcam-overlay"></div>
+
+  <!-- External JS -->
   <script src="ascript.js"></script>
+  
 </body>
 </html>

@@ -181,6 +181,31 @@ a-scene {
   text-transform: uppercase;
 }
 
+/* === Smooth Fading Red REC Light === */
+.rec-indicator {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  margin-left: 6px;
+  border-radius: 50%;
+  background-color: red;
+  box-shadow: 0 0 10px rgba(255, 0, 0, 0.8);
+  animation: rec-fade 1.8s ease-in-out infinite;
+  vertical-align: middle;
+}
+
+@keyframes rec-fade {
+  0%, 100% {
+    opacity: 0.2;
+    box-shadow: 0 0 4px rgba(255, 0, 0, 0.2);
+  }
+  50% {
+    opacity: 1;
+    box-shadow: 0 0 16px rgba(255, 0, 0, 0.9);
+  }
+}
+
+
 /* Article card */
 #article-card {
   position: fixed;
@@ -237,4 +262,38 @@ color: #ccc; }
   border: 3px solid white;
   border-radius: 4px;
   box-shadow: 0 0 20px rgba(255,255,255,0.3);
+}
+
+/* === Webcam Effect Overlay === */
+#webcam-overlay {
+  pointer-events: none;
+  position: fixed;
+  inset: 0;
+  z-index: 999;
+  mix-blend-mode: overlay;
+  opacity: 0.5;
+  background:
+    repeating-linear-gradient(
+      to bottom,
+      rgba(255, 255, 255, 0.04) 0px,
+      rgba(255, 255, 255, 0.04) 1px,
+      transparent 2px,
+      transparent 4px
+    ),
+    radial-gradient(
+      circle at center,
+      rgba(255, 255, 255, 0) 0%,
+      rgba(0, 0, 0, 0.3) 100%
+    );
+  animation: webcam-noise 0.15s infinite;
+  backdrop-filter: brightness(1.05) contrast(1.1);
+}
+
+/* === Slight flicker/noise motion === */
+@keyframes webcam-noise {
+  0%   { opacity: 0.23; transform: translate(0, 0); }
+  25%  { opacity: 0.26; transform: translate(-1px, 1px); }
+  50%  { opacity: 0.24; transform: translate(1px, -1px); }
+  75%  { opacity: 0.27; transform: translate(0.5px, 0.5px); }
+  100% { opacity: 0.25; transform: translate(0, 0); }
 }
